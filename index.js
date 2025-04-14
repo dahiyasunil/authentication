@@ -1,8 +1,11 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import initializeDatabse from "./utils/db.connect.js";
 
 dotenv.config();
+
+initializeDatabse();
 
 const app = express();
 

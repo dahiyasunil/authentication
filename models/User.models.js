@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema(
     passwordResetExpiry: Date,
   },
   {
-    timestamp: true,
+    timestamps: true,
   },
 );
 

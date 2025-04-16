@@ -57,15 +57,52 @@ async function registerUser(req, res) {
     res
       .status(201)
       .json({ message: "User registered successfully", success: true });
-  } catch (err) {
+  } catch (error) {
     console.error("User not registered", err);
 
     res.status(400).json({
       message: "User not registered",
       success: false,
-      error: err.message,
+      error,
     });
   }
 }
 
-export { registerUser };
+async function verifyUser(req, res) {
+  const { verificationToken } = req.params;
+
+  if (!verificationToken) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid verification token.",
+    });
+  }
+
+  try {
+    const user = await User.findOne({ verificationToken });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid verification token." });
+    }
+
+    user.verificationToken = undefined;
+    user.isVerified = true;
+
+    await user.save();
+
+    res
+      .status(200)
+      .json({ success: true, message: "User verified successfully." });
+  } catch (error) {
+    console.error("Error while trying to verify user.", error);
+    res.status(400).json({
+      success: false,
+      message: "Error while trying to verify user.",
+      error,
+    });
+  }
+}
+
+export { registerUser, verifyUser };

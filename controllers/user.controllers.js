@@ -133,8 +133,10 @@ async function loginUser(req, res) {
         .json({ success: false, message: "Incorrect Password." });
     }
 
-    if(!user.isVerified){
-      return res.status(400).json({success:false, message:"User is not verified"})
+    if (!user.isVerified) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User is not verified" });
     }
 
     const jwtToken = jwt.sign(
@@ -152,9 +154,15 @@ async function loginUser(req, res) {
       maxAge: 24 * 60 * 60 * 1000,
     };
 
-    res.cookie("test", jwtToken, cookieOptions);
+    res.cookie("token", jwtToken, cookieOptions);
 
-    res.status(200).json({ success: true, message: "Login successful" });
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      /** We send token as part of response in case of mobile app as their is no concept of cookies in apps */
+      token: jwtToken,
+      user: { id: user._id, name: user.name, role: user.role },
+    });
   } catch (error) {
     console.error("Failed to login.", error);
     res

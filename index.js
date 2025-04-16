@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import initializeDatabse from "./utils/db.connect.js";
 import userRoutes from "./routes/user.routes.js";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
@@ -18,8 +19,9 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 const port = process.env.PORT || 4000;
 

@@ -1,6 +1,8 @@
 import User from "../models/User.models.js";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 async function registerUser(req, res) {
   const { name, email, password } = req.body;
@@ -105,4 +107,60 @@ async function verifyUser(req, res) {
   }
 }
 
-export { registerUser, verifyUser };
+async function loginUser(req, res) {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ success: false, message: "email and password are required!" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid email or password." });
+    }
+
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordMatch) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Incorrect Password." });
+    }
+
+    if(!user.isVerified){
+      return res.status(400).json({success:false, message:"User is not verified"})
+    }
+
+    const jwtToken = jwt.sign(
+      { id: user._id, name: user.name, role: user.role },
+      process.env.SECRET,
+      {
+        expiresIn: "24h",
+      },
+    );
+
+    const cookieOptions = {
+      /** Setting httpOnly flag let the cookie be in control of backend and not easily manipulated by user */
+      httpOnly: true,
+      secure: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    };
+
+    res.cookie("test", jwtToken, cookieOptions);
+
+    res.status(200).json({ success: true, message: "Login successful" });
+  } catch (error) {
+    console.error("Failed to login.", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to login user.", error });
+  }
+}
+
+export { registerUser, verifyUser, loginUser };

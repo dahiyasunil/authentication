@@ -171,4 +171,29 @@ async function loginUser(req, res) {
   }
 }
 
-export { registerUser, verifyUser, loginUser };
+async function userProfile(req, res) {
+  try {    
+    const user = await User.findOne({ _id: req.user.id }).select("-password");
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "",
+      user
+    });
+  } catch (error) {
+    console.error("Error in userProfile controller", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
+
+export { registerUser, verifyUser, loginUser, userProfile };

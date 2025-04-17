@@ -171,8 +171,22 @@ async function loginUser(req, res) {
   }
 }
 
+async function logoutUser(req, res) {
+  try {
+    res.cookie("token", "", { expiresIn: new Date(0) });
+    res.status(200).json({ success: true, message: "Logged out successfully" });
+  } catch (error) {
+    console.error("Error in logoutUser controller.", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error,
+    });
+  }
+}
+
 async function userProfile(req, res) {
-  try {    
+  try {
     const user = await User.findOne({ _id: req.user.id }).select("-password");
 
     if (!user) {
@@ -185,7 +199,7 @@ async function userProfile(req, res) {
     res.status(200).json({
       success: true,
       message: "",
-      user
+      user,
     });
   } catch (error) {
     console.error("Error in userProfile controller", error);
@@ -196,4 +210,4 @@ async function userProfile(req, res) {
   }
 }
 
-export { registerUser, verifyUser, loginUser, userProfile };
+export { registerUser, verifyUser, loginUser, logoutUser, userProfile };

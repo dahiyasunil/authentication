@@ -210,4 +210,62 @@ async function userProfile(req, res) {
   }
 }
 
-export { registerUser, verifyUser, loginUser, logoutUser, userProfile };
+async function forgetPassword(req, res) {
+  const { email } = req.body;
+
+  if (!email) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Email is required." });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const resetPasswordToken = crypto.randomBytes(32).toString("hex");
+
+    user.passwordResetToken = resetPasswordToken;
+    user.passwordResetExpiry = Date.now() + 10 * 60 * 1000;
+
+    await user.save();
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.MAILTRAP_HOST,
+      port: process.env.MAILTRAP_PORT,
+      secure: false,
+      auth: {
+        user: process.env.MAILTRAP_USERNAME,
+        pass: process.env.MAILTRAP_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.MAILTRAP_SENDEREMAIL,
+      to: user.email,
+      subject: "Reset your password",
+      html: `<p>Click on the following link to reset your password:</p><a href=${process.env.BASE_URL}/api/v1/users/reset-password/${resetPasswordToken}>Reset Password</a>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({
+      success: true,
+      message: "An email is sent to user to reset password",
+    });
+  } catch (error) {
+    console.error("Error in forget password controller ", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error,
+    });
+  }
+}
+
+export { registerUser, verifyUser, loginUser, logoutUser, userProfile, forgetPassword };

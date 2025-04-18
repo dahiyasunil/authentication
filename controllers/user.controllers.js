@@ -268,4 +268,69 @@ async function forgetPassword(req, res) {
   }
 }
 
-export { registerUser, verifyUser, loginUser, logoutUser, userProfile, forgetPassword };
+async function resetPassword(req, res) {
+  const resetPasswordToken = req.params.token;
+  const { newPassword, confirmPassword } = req.body;
+
+  if (!resetPasswordToken) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid token",
+    });
+  }
+
+  if (!newPassword || !confirmPassword) {
+    return res.status(400).json({
+      success: false,
+      message: "newPassword and confirmPassword are required",
+    });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({
+      success: false,
+      message: "new password does not match confrim password.",
+    });
+  }
+
+  try {
+    const user = await User.findOne({
+      passwordResetToken: resetPasswordToken,
+      passwordResetExpiry: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "reset link expired",
+      });
+    }
+
+    user.password = confirmPassword;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpiry = undefined;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successfully",
+    });
+  } catch (error) {
+    console.error("Error in resetPassword controller ", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error,
+    });
+  }
+}
+
+export {
+  registerUser,
+  verifyUser,
+  loginUser,
+  logoutUser,
+  userProfile,
+  forgetPassword,
+  resetPassword,
+};
